@@ -5,19 +5,26 @@
 #pragma once
 #include "MachineCheckerDoc.h"
 
+#define TIM_SHOW_VIEW		10
 
 class CMachineCheckerView : public CFormView
 {
+	BOOL m_bTimShowView;
+	CString m_sTimShowViewChkExe;
+
 	void InitMenu();
 	void SetMenu();
 	CString FileBrowse();
 
 	void ShowDlgIO();
 	void ShowDlgLight(int nIndex);
-	void ShowDlgMotion();
+	void ShowDlgMotion(CString sPath);
 	void ShowDlgCamera(int nIndex);
 	void ShowDlgTrigger();
 	void ShowDlg2DBarcode();
+
+	void ShowViewAfter(CString sPath);
+	BOOL IsOnExe();
 
 	BOOL FindProcess(CString strProcName);
 	DWORD KillProcess(CString strProcName);
@@ -66,6 +73,7 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnBnClickedBtnOpen();
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
 };
 
 #ifndef _DEBUG  // MachineCheckerView.cpp의 디버그 버전

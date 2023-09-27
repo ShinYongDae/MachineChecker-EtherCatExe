@@ -40,6 +40,7 @@ IMPLEMENT_DYNCREATE(CMachineCheckerView, CFormView)
 
 BEGIN_MESSAGE_MAP(CMachineCheckerView, CFormView)
 	ON_BN_CLICKED(IDC_BTN_OPEN, &CMachineCheckerView::OnBnClickedBtnOpen)
+	ON_WM_TIMER()
 END_MESSAGE_MAP()
 
 // CMachineCheckerView 생성/소멸
@@ -48,11 +49,13 @@ CMachineCheckerView::CMachineCheckerView()
 	: CFormView(IDD_MACHINECHECKER_FORM)
 {
 	// TODO: 여기에 생성 코드를 추가합니다.
-
+	m_bTimShowView = FALSE;
+	m_sTimShowViewChkExe = _T("");
 }
 
 CMachineCheckerView::~CMachineCheckerView()
 {
+	m_bTimShowView = FALSE;
 }
 
 void CMachineCheckerView::DoDataExchange(CDataExchange* pDX)
@@ -303,8 +306,8 @@ void CMachineCheckerView::DispMotion()
 {
 	CMainFrame *pFrame = (CMainFrame *)AfxGetMainWnd();
 	pFrame->ShowWindow(SW_MINIMIZE);
-	ShowDlgMotion();
-	pFrame->ShowWindow(SW_NORMAL);
+	ShowDlgMotion(_T("DlgMotion.exe"));
+	ShowViewAfter(_T("DlgMotion.exe"));
 }
 
 void CMachineCheckerView::DispCamera1()
@@ -362,7 +365,7 @@ void CMachineCheckerView::ShowDlgLight(int nIndex)
 	}
 }
 
-void CMachineCheckerView::ShowDlgMotion()
+void CMachineCheckerView::ShowDlgMotion(CString sPath)
 {
 	CMainFrame *pFrame = (CMainFrame *)AfxGetMainWnd();
 	CMachineCheckerDoc *pDoc = (CMachineCheckerDoc*)pFrame->GetActiveDocument();
@@ -371,18 +374,18 @@ void CMachineCheckerView::ShowDlgMotion()
 	{
 		//CDlgMotion Dlg;
 		//Dlg.DoModal();
-		if (FindProcess(_T("DlgMotion.exe")) == 0)
+		if (FindProcess(sPath) == 0)
 		{
 			CFileFind finder;
 
-			if (finder.FindFile(_T("DlgMotion.exe")) == 1)
+			if (finder.FindFile(sPath) == 1)
 			{
 				SHELLEXECUTEINFO info;
 				ZeroMemory(&info, sizeof(info));
 				info.cbSize = sizeof(SHELLEXECUTEINFO);
 				info.hwnd = NULL;
 				info.lpVerb = _T("open");
-				info.lpFile = _T("DlgMotion.exe");
+				info.lpFile = sPath;
 				info.lpParameters = NULL;
 				info.lpDirectory = NULL;
 				info.nShow = SW_SHOWNORMAL; // SW_SHOWMAXIMIZED
@@ -393,18 +396,18 @@ void CMachineCheckerView::ShowDlgMotion()
 		}
 		else
 		{
-			KillProcess(_T("DlgMotion.exe"));
+			KillProcess(sPath);
 
 			CFileFind finder;
 
-			if (finder.FindFile(_T("DlgMotion.exe")) == 1)
+			if (finder.FindFile(sPath) == 1)
 			{
 				SHELLEXECUTEINFO info;
 				ZeroMemory(&info, sizeof(info));
 				info.cbSize = sizeof(SHELLEXECUTEINFO);
 				info.hwnd = NULL;
 				info.lpVerb = _T("open");
-				info.lpFile = _T("DlgMotion.exe");
+				info.lpFile = sPath;
 				info.lpParameters = NULL;
 				info.lpDirectory = NULL;
 				info.nShow = SW_SHOWNORMAL; // SW_SHOWMAXIMIZED
@@ -454,7 +457,20 @@ void CMachineCheckerView::ShowDlg2DBarcode()
 
 }
 
+void CMachineCheckerView::ShowViewAfter(CString sPath)
+{
+	m_sTimShowViewChkExe = sPath;
+	m_bTimShowView = TRUE;
+	SetTimer(TIM_SHOW_VIEW, 100, NULL);
+}
 
+BOOL CMachineCheckerView::IsOnExe()
+{
+	if (m_sTimShowViewChkExe.IsEmpty())
+		return FALSE;
+
+	return FindProcess(m_sTimShowViewChkExe);
+}
 
 BOOL CMachineCheckerView::FindProcess(CString strProcName)
 {
@@ -561,4 +577,25 @@ DWORD CMachineCheckerView::KillProcess(CString strProcName)
 
 	CloseHandle(hProcessSnap); // Do not forget to clean up the snapshot object. 
 	return Return;
+}
+
+
+void CMachineCheckerView::OnTimer(UINT_PTR nIDEvent)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	CMainFrame *pFrame = (CMainFrame *)AfxGetMainWnd();
+
+	if (nIDEvent == TIM_SHOW_VIEW)
+	{
+		KillTimer(TIM_SHOW_VIEW);
+		if (!IsOnExe())
+		{
+			m_bTimShowView = FALSE;
+			pFrame->ShowWindow(SW_NORMAL);
+		}
+		if (m_bTimShowView)
+			SetTimer(TIM_SHOW_VIEW, 100, NULL);
+	}
+
+	CFormView::OnTimer(nIDEvent);
 }
